@@ -1,2 +1,2 @@
-# LIOSAM_noted
-LIOSAM_noted个人学习注释
+# LIO-SAM_noted
+LIOsSAM_noted个人学习注释
