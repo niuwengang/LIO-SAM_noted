@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/g/workspace/LIO-SAM_noted/LIOSAM_catkin/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/g/workspace/LIO-SAM_noted/LIOSAM_catkin/src/LIO-SAM/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
