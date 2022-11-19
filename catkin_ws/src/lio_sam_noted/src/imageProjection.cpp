@@ -97,8 +97,9 @@ public:
 
         pubExtractedCloud = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/deskew/cloud_deskewed", 1);
         pubLaserCloudInfo = nh.advertise<lio_sam::cloud_info>("lio_sam/deskew/cloud_info", 1);
-
+        /*分配内存*/
         allocateMemory();
+        /*参数重置*/
         resetParameters();
 
         pcl::console::setVerbosityLevel(pcl::console::L_ERROR);
@@ -198,7 +199,7 @@ public:
     }
 
     /**
-     * @brief 原始点云回调函数
+     * @brief 原始点云回调函数(本节点的主逻辑)
      * @note
      * @todo
      **/
@@ -208,6 +209,7 @@ public:
         if (!cachePointCloud(laserCloudMsg))
             return;
 
+        /*去畸变*/
         if (!deskewInfo())
             return;
 
@@ -321,6 +323,7 @@ public:
      **/
     bool deskewInfo()
     {
+        /*对imu原始数据及imu预积分数据加锁*/
         std::lock_guard<std::mutex> lock1(imuLock);
         std::lock_guard<std::mutex> lock2(odoLock);
 
