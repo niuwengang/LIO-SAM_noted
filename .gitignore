@@ -1,6 +1,4 @@
 
-catkin_ws/.vscode/
+build/
 
-catkin_ws/build/
-
-catkin_ws/devel/
+devel/
