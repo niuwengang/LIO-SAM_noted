@@ -1,14 +1,20 @@
 #include "utility.h"
 #include "lio_sam/cloud_info.h"
 
+/*
+自定义velodyne的点云类型
+XYZ+intensity+ring+time
+*/
 struct VelodynePointXYZIRT
 {
-    PCL_ADD_POINT4D
-    PCL_ADD_INTENSITY;
-    uint16_t ring;
-    float time;
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    PCL_ADD_POINT4D  // 添加XYZ+填充类型的首选方式
+    PCL_ADD_INTENSITY;//强度
+    uint16_t ring;//添加圈数
+    float time;//添加时间戳
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW  // 确保新的分配器内存是对齐的
 } EIGEN_ALIGN16;
+
+/*注册为pcl点云格式*/
 POINT_CLOUD_REGISTER_POINT_STRUCT(VelodynePointXYZIRT,
                                   (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring, ring)(float, time, time))
 
@@ -91,10 +97,11 @@ public:
      **/
     ImageProjection() : deskewFlag(0)
     {
+        /*配置话题订阅 imu原始数据 imu里程计 原始的激光点云*/
         subImu = nh.subscribe<sensor_msgs::Imu>(imuTopic, 2000, &ImageProjection::imuHandler, this, ros::TransportHints().tcpNoDelay());
         subOdom = nh.subscribe<nav_msgs::Odometry>(odomTopic + "_incremental", 2000, &ImageProjection::odometryHandler, this, ros::TransportHints().tcpNoDelay());
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>(pointCloudTopic, 5, &ImageProjection::cloudHandler, this, ros::TransportHints().tcpNoDelay());
-
+        /*配置话题发布 去畸变*/
         pubExtractedCloud = nh.advertise<sensor_msgs::PointCloud2>("lio_sam/deskew/cloud_deskewed", 1);
         pubLaserCloudInfo = nh.advertise<lio_sam::cloud_info>("lio_sam/deskew/cloud_info", 1);
         /*分配内存*/
@@ -229,12 +236,13 @@ public:
      **/
     bool cachePointCloud(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     {
-        /*缓存点云数据*/
+        /*缓存点云数据到队列，不足2帧不处理*/
         cloudQueue.push_back(*laserCloudMsg);
         if (cloudQueue.size() <= 2)
             return false;
 
-        /*转换点云格式*/
+        /*队列中取出头节点 
+        转换点云格式     ros::sensor_msgs::PointCloud2->pcl::PointCloud<PointXYZIRT>*/
         currentCloudMsg = std::move(cloudQueue.front());
         cloudQueue.pop_front();
         if (sensor == SensorType::VELODYNE || sensor == SensorType::LIVOX)
@@ -265,19 +273,19 @@ public:
             ros::shutdown();
         }
 
-        /*时间戳拷贝*/
+        /*时间戳拷贝 一帧点云的头时间和尾时间*/
         cloudHeader = currentCloudMsg.header;
         timeScanCur = cloudHeader.stamp.toSec();
         timeScanEnd = timeScanCur + laserCloudIn->points.back().time;
 
-        /*是否已滤去无效点云*/
+        /*检查点云是否存在无效点*/
         if (laserCloudIn->is_dense == false)
         {
             ROS_ERROR("Point cloud is not in dense format, please remove NaN points first!");
             ros::shutdown();
         }
 
-        /*检查是否存在ring通道*/
+        /*检查是否存在ring通道 只检查一次*/
         static int ringFlag = 0;
         if (ringFlag == 0)
         {
@@ -297,7 +305,7 @@ public:
             }
         }
 
-        /*检查是否存在time通道*/
+        /*检查是否存在time通道 只检查一次*/
         if (deskewFlag == 0)
         {
             deskewFlag = -1;
